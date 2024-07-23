@@ -1,38 +1,13 @@
 #!/bin/bash
 
-# Get the current project ID, region, and zone dynamically
+# Set variables
 PROJECT_ID=$(gcloud config get-value project)
 ZONE=$(gcloud config get-value compute/zone)
 
-# Color codes for output
-BLACK=$(tput setaf 0)
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-BLUE=$(tput setaf 4)
-MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-
-BG_BLACK=$(tput setab 0)
-BG_RED=$(tput setab 1)
-BG_GREEN=$(tput setab 2)
-BG_YELLOW=$(tput setab 3)
-BG_BLUE=$(tput setab 4)
-BG_MAGENTA=$(tput setab 5)
-BG_CYAN=$(tput setab 6)
-BG_WHITE=$(tput setab 7)
-
-BOLD=$(tput bold)
-RESET=$(tput sgr0)
-
-# Start message
-echo "${YELLOW}${BOLD}Starting${RESET} ${GREEN}${BOLD}Execution${RESET}"
-
 # Create VM instance
 gcloud compute instances create gcelab \
-  --project=$PROJECT_ID \
-  --zone=$ZONE \
+  --project="$PROJECT_ID" \
+  --zone="$ZONE" \
   --machine-type=e2-medium \
   --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default \
   --metadata=enable-oslogin=true \
@@ -47,19 +22,11 @@ gcloud compute instances create gcelab \
   --labels=goog-ec-src=vm_add-gcloud \
   --reservation-affinity=any
 
-# SSH into the VM and install Nginx
+# Install NGINX on the VM
 gcloud compute ssh --zone "$ZONE" "gcelab" --project "$PROJECT_ID" --quiet --command "sudo apt-get update && sudo apt-get install -y nginx && ps auwx | grep nginx"
 
-# Install Nginx locally (for the case of testing or multiple instances)
-sudo apt-get update
-sudo apt-get install -y nginx
-ps auwx | grep nginx
-
-# Create firewall rule to allow HTTP traffic
+# Create firewall rule
 gcloud compute firewall-rules create allow-http \
   --network=default \
   --allow=tcp:80 \
-  --target-tags=http-server
-
-# End message
-echo "${RED}${BOLD}Congratulations${RESET} ${WHITE}${BOLD}for${RESET} ${GREEN}${BOLD}Completing the Lab !!!${RESET}"
+  --target-tags=allow-http
